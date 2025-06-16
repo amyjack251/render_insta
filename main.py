@@ -1,8 +1,13 @@
 import os
 import re
 import yt_dlp
+import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+
+# Logging setup
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 SESSION_FILE = "sessionid.txt"
 
@@ -24,6 +29,9 @@ def delete_session():
         os.remove(SESSION_FILE)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN environment variable not set.")
+
 sessionid = load_session()
 
 URL_REGEX = r"(https?://[\w./?=&%-]+(?:instagram\.com|youtu\.be|youtube\.com|tiktok\.com)[^\s]*)"
@@ -38,13 +46,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = match.group(1)
     await update.message.reply_text("⏳ Downloading media...")
 
+    os.makedirs("downloads", exist_ok=True)
     ydl_opts = {
         'outtmpl': 'downloads/%(title).70s.%(ext)s',
         'format': 'best',
         'quiet': True,
     }
 
-    # Add sessionid cookie if needed
+    # Add sessionid cookie if needed for Instagram
     if 'instagram.com' in url and sessionid:
         ydl_opts['cookiefile'] = SESSION_FILE
         with open(SESSION_FILE, 'w') as f:
@@ -57,12 +66,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ydl.download([url])
 
         if os.path.exists(filename):
-            await update.message.reply_video(video=open(filename, 'rb'))
+            with open(filename, 'rb') as f:
+                await update.message.reply_video(video=f)
             os.remove(filename)
         else:
             await update.message.reply_text("⚠️ Downloaded but file not found.")
     except Exception as e:
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        logger.error("Download error", exc_info=True)
+        await update.message.reply_text("❌ An error occurred while downloading.")
 
 async def set_session(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args:
@@ -80,8 +91,8 @@ async def delete_session_command(update: Update, context: ContextTypes.DEFAULT_T
     sessionid = None
     await update.message.reply_text("❌ Session ID deleted.")
 
-# ✅ Entry point
-if name == "main":
+# ✅ Corrected block
+if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("session", set_session))
