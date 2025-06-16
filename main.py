@@ -44,7 +44,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'quiet': True,
     }
 
-    # Add sessionid cookie if needed for Instagram
+    # Add sessionid cookie if needed
     if 'instagram.com' in url and sessionid:
         ydl_opts['cookiefile'] = SESSION_FILE
         with open(SESSION_FILE, 'w') as f:
@@ -80,8 +80,8 @@ async def delete_session_command(update: Update, context: ContextTypes.DEFAULT_T
     sessionid = None
     await update.message.reply_text("❌ Session ID deleted.")
 
-# ✅ Corrected block
-if __name__ == "__main__":
+# ✅ Entry point
+if name == "main":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("session", set_session))
