@@ -77,7 +77,7 @@ async def delete_session_command(update: Update, context: ContextTypes.DEFAULT_T
     sessionid = None
     await update.message.reply_text("❌ Session ID deleted.")
 
-if name == "main":
+if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("session", set_session))
     app.add_handler(CommandHandler("delete", delete_session_command))
