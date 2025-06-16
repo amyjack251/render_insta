@@ -6,19 +6,16 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 
 SESSION_FILE = "sessionid.txt"
 
-# Load session ID if exists
 def load_session():
     if os.path.exists(SESSION_FILE):
         with open(SESSION_FILE, "r") as f:
             return f.read().strip()
     return None
 
-# Save session ID
 def save_session(sessionid):
     with open(SESSION_FILE, "w") as f:
         f.write(sessionid)
 
-# Delete session ID
 def delete_session():
     if os.path.exists(SESSION_FILE):
         os.remove(SESSION_FILE)
@@ -26,7 +23,7 @@ def delete_session():
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 sessionid = load_session()
 
-URL_REGEX = r"(https?://[\w./?=&%-]+(?:instagram\.com|youtu\.be|youtube\.com|tiktok\.com)[^\s]*)"
+URL_REGEX = r"(https?://[\w./?=&%-]+(?:instagram.com|youtu.be|youtube.com|tiktok.com)[^\s]*)"
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
@@ -44,6 +41,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'quiet': True,
     }
 
+    # Instagram session
     if 'instagram.com' in url and sessionid:
         ydl_opts['cookiefile'] = SESSION_FILE
         with open(SESSION_FILE, 'w') as f:
@@ -79,12 +77,10 @@ async def delete_session_command(update: Update, context: ContextTypes.DEFAULT_T
     sessionid = None
     await update.message.reply_text("❌ Session ID deleted.")
 
-if __name__ == '__main__':
+if name == 'main':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-
     app.add_handler(CommandHandler("session", set_session))
     app.add_handler(CommandHandler("delete", delete_session_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
     print("🤖 Bot is running...")
     app.run_polling()
